@@ -11,11 +11,11 @@
     font-size: 12px;
 }
 
-#proxy-mode-type {
+#proxy-mode-type, #proxy-headerHost-mode-type {
     width: 100%;
 }
 
-#proxy-mode-type-button {
+#proxy-mode-type-button, #proxy-headerHost-mode-type-button {
     width: 100%;
 }
 

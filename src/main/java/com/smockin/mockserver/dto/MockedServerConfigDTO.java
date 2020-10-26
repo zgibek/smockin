@@ -1,5 +1,6 @@
 package com.smockin.mockserver.dto;
 
+import com.smockin.admin.persistence.enums.ProxyHeaderHostModeEnum;
 import com.smockin.admin.persistence.enums.ProxyModeTypeEnum;
 import com.smockin.admin.persistence.enums.ServerTypeEnum;
 import java.util.HashMap;
@@ -20,6 +21,8 @@ public class MockedServerConfigDTO {
     private ProxyModeTypeEnum proxyModeType;
     private String proxyForwardUrl;
     private boolean doNotForwardWhen404Mock;
+    private ProxyHeaderHostModeEnum proxyHeaderHostMode;
+    private String proxyFixedHeaderHost;
     private Map<String, String> nativeProperties = new HashMap<>();
 
     public MockedServerConfigDTO() {
@@ -28,7 +31,9 @@ public class MockedServerConfigDTO {
 
     public MockedServerConfigDTO(final ServerTypeEnum serverType, Integer port, Integer maxThreads, Integer minThreads, Integer timeOutMillis,
                                  boolean autoStart, boolean proxyMode, ProxyModeTypeEnum proxyModeType,
-                                 final String proxyForwardUrl, final boolean doNotForwardWhen404Mock, Map<String, String> nativeProperties) {
+                                 final String proxyForwardUrl, final boolean doNotForwardWhen404Mock,
+                                 ProxyHeaderHostModeEnum proxyHeaderHostMode, String proxyFixedHeaderHost,
+                                 Map<String, String> nativeProperties) {
         this.serverType = serverType;
         this.port = port;
         this.maxThreads = maxThreads;
@@ -39,6 +44,8 @@ public class MockedServerConfigDTO {
         this.proxyModeType = proxyModeType;
         this.proxyForwardUrl = proxyForwardUrl;
         this.doNotForwardWhen404Mock = doNotForwardWhen404Mock;
+        this.proxyHeaderHostMode = proxyHeaderHostMode;
+        this.proxyFixedHeaderHost = proxyFixedHeaderHost;
         this.nativeProperties = nativeProperties;
     }
 
@@ -98,6 +105,12 @@ public class MockedServerConfigDTO {
         this.proxyModeType = proxyModeType;
     }
 
+    public ProxyHeaderHostModeEnum getProxyHeaderHostMode() { return proxyHeaderHostMode; }
+    public void setProxyHeaderHostMode(ProxyHeaderHostModeEnum proxyHeaderHostMode) { this.proxyHeaderHostMode = proxyHeaderHostMode; }
+
+    public String getProxyFixedHeaderHost() { return proxyFixedHeaderHost; }
+    public void setProxyFixedHeaderHost(String proxyFixedHeaderHost) { this.proxyFixedHeaderHost = proxyFixedHeaderHost; }
+
     public String getProxyForwardUrl() {
         return proxyForwardUrl;
     }
@@ -131,6 +144,8 @@ public class MockedServerConfigDTO {
                 + ", ProxyMode : " + proxyMode
                 + ", ProxyModeType : " + proxyModeType
                 + ", proxyForwardUrl : " + proxyForwardUrl
-                + ", doNotForwardWhen404Mock : " + doNotForwardWhen404Mock;
+                + ", doNotForwardWhen404Mock : " + doNotForwardWhen404Mock
+                + ", ProxyHeaderHostMode : " + proxyHeaderHostMode
+                + ", fixedProxyHeaderHost : " + proxyFixedHeaderHost;
     }
 }

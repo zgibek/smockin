@@ -72,6 +72,34 @@
             <input id="proxyForwardUrl" class="form-control ng-isolate-scope ng-pristine ng-valid" ng-model="serverConfig.proxyForwardUrl" placeholder="{{ proxyForwardUrlPlaceholderTxt }}" type="text" ng-disabled="readOnly" />
         </div>
 
+        <!-- Header Host proxy settings -->
+        <div id="proxy-headerHost-mode-type" class="btn-group" ng-if="serverConfig.proxyMode" uib-dropdown>
+            <label>{{ proxyHeaderHostSectionLabel }}</label>
+            <button id="proxy-headerHost-mode-type-button" type="button" class="btn btn-default dropdown-toggle" uib-dropdown-toggle>
+                <span ng-if="serverConfig.proxyHeaderHostMode == ProxyHeaderHostModeDownstream">{{ proxyHeaderHostModeDownstreamLabel }}</span>
+                <span ng-if="serverConfig.proxyHeaderHostMode == ProxyHeaderHostModeSmart">{{ proxyHeaderHostModeSmartLabel }}</span>
+                <span ng-if="serverConfig.proxyHeaderHostMode == ProxyHeaderHostModeFromRequest">{{ proxyHeaderHostModeFromRequestLabel }}</span>
+                <span ng-if="serverConfig.proxyHeaderHostMode == ProxyHeaderHostModeFixed">{{ proxyHeaderHostModeFixedLabel }}</span>
+                <span class="caret"></span>
+            </button>
+            <ul id="proxyHeaderHostModeTypeList" class="dropdown-menu" uib-dropdown-menu role="menu" aria-labelledby="single-button">
+                <li role="menuitem">
+                    <a ng-click="doSetProxyHeaderHostModeType(ProxyHeaderHostModeDownstream)">{{ proxyHeaderHostModeDownstreamLabel }}</a>
+                    <a ng-click="doSetProxyHeaderHostModeType(ProxyHeaderHostModeSmart)">{{ proxyHeaderHostModeSmartLabel }}</a>
+                    <a ng-click="doSetProxyHeaderHostModeType(ProxyHeaderHostModeFromRequest)">{{ proxyHeaderHostModeFromRequestLabel }}</a>
+                    <a ng-click="doSetProxyHeaderHostModeType(ProxyHeaderHostModeFixed)">{{ proxyHeaderHostModeFixedLabel }}</a>
+                </li>
+            </ul>
+        </div>
+
+        <br />
+        <br />
+
+        <div class="form-group" ng-if="serverConfig.proxyHeaderHostMode == 'FIXED'">
+            <label for="proxyFixedHeaderHost" class="ng-binding">{{ proxyHeaderHostModeFixedLabel }}</label>
+            <input id="proxyFixedHeaderHost" class="form-control ng-isolate-scope ng-pristine ng-valid" ng-model="serverConfig.proxyFixedHeaderHost" placeholder="{{ proxyHeaderHostFixedPlaceholderTxt }}" type="text" ng-disabled="readOnly" />
+        </div>
+
     </div>
 
 </div>

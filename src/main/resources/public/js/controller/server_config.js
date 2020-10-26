@@ -11,6 +11,11 @@ app.controller('serverConfigController', function($scope, $location, $uibModal, 
     $scope.isLoggedIn = auth.isLoggedIn();
     $scope.ActiveStatus = 'ACTIVE';
     $scope.ReactiveStatus = 'REACTIVE';
+    $scope.ProxyHeaderHostModeDownstream = 'DOWNSTREAM';
+    $scope.ProxyHeaderHostModeSmart = 'SMART';
+    $scope.ProxyHeaderHostModeFromRequest = 'FROM_REQUEST';
+    $scope.ProxyHeaderHostModeFixed = 'FIXED';
+    $scope.proxyFixedHeaderHost = "";
 
 
     //
@@ -33,6 +38,12 @@ app.controller('serverConfigController', function($scope, $location, $uibModal, 
     $scope.proxyModeActiveTypeLabel = 'Look for MOCK first, if nothing found, then forward to DOWNSTREAM';
     $scope.proxyModeReactiveTypeLabel = 'Call DOWNSTREAM first, if nothing found, then try to MOCK';
     $scope.activeProxy404MockDoNotForwardLabel = 'Do not forward to downstream when 404 is a deliberate mock response';
+    $scope.proxyHeaderHostSectionLabel = 'How to set Host attribute in header';
+    $scope.proxyHeaderHostModeDownstreamLabel = 'Downstream Forwarding Host';
+    $scope.proxyHeaderHostModeSmartLabel = 'Smart (preserve from request in case of amazonaws.com, otherwise Downstream Host)';
+    $scope.proxyHeaderHostModeFromRequestLabel = 'Preserve from request (Downstream Host is not set in request)';
+    $scope.proxyHeaderHostModeFixedLabel = 'Always fixed value from below:';
+    $scope.proxyHeaderHostFixedPlaceholderTxt = 'e.g smockin-api.amazonaws.com';
 
 
     //
@@ -78,6 +89,8 @@ app.controller('serverConfigController', function($scope, $location, $uibModal, 
         "proxyModeType" : $scope.ActiveStatus,
         "doNotForwardWhen404Mock" : false,
         "proxyForwardUrl" : null,
+        "proxyHeaderHostMode" : $scope.ProxyHeaderHostModeDownstream,
+        "proxyHeaderHostFixed" : "",
     };
 
 
@@ -85,6 +98,10 @@ app.controller('serverConfigController', function($scope, $location, $uibModal, 
     // Scoped Functions
     $scope.doSetProxyModeType = function(mode) {
         $scope.serverConfig.proxyModeType = mode;
+    };
+
+    $scope.doSetProxyHeaderHostModeType = function(mode) {
+        $scope.serverConfig.proxyHeaderHostMode = mode;
     };
 
     $scope.doSaveConfig = function() {
@@ -131,6 +148,12 @@ app.controller('serverConfigController', function($scope, $location, $uibModal, 
             return;
         }
 
+        if ($scope.serverConfig.proxyMode && $scope.serverConfig.proxyHeaderHostMode === 'FIXED'
+                && $scope.serverConfig.proxyFixedHeaderHost == null) {
+            showAlert("'Proxy Header Host Fixed' should contains a valid ");
+            return;
+        }
+
         var req = {
             "serverType" : $scope.serverConfig.serverType,
             "port" : $scope.serverConfig.port,
@@ -142,6 +165,8 @@ app.controller('serverConfigController', function($scope, $location, $uibModal, 
             "proxyModeType" : $scope.serverConfig.proxyModeType,
             "proxyForwardUrl" : $scope.serverConfig.proxyForwardUrl,
             "doNotForwardWhen404Mock" : $scope.serverConfig.doNotForwardWhen404Mock,
+            "proxyHeaderHostMode" : $scope.serverConfig.proxyHeaderHostMode,
+            "proxyFixedHeaderHost" : $scope.serverConfig.proxyFixedHeaderHost,
             "nativeProperties" : {}
         }
 
@@ -193,8 +218,14 @@ app.controller('serverConfigController', function($scope, $location, $uibModal, 
                     "proxyModeType" : data.proxyModeType,
                     "proxyForwardUrl" : data.proxyForwardUrl,
                     "doNotForwardWhen404Mock" : data.doNotForwardWhen404Mock,
+                    "proxyHeaderHostMode" : data.proxyHeaderHostMode,
+                    "proxyFixedHeaderHost" : data.proxyFixedHeaderHost,
                     "enableCors" : (data.nativeProperties.ENABLE_CORS != null && data.nativeProperties.ENABLE_CORS.toUpperCase() == "TRUE")
                 };
+                // do a fallback if updated and no default value is set yet.
+                if ($scope.serverConfig.proxyHeaderHostMode == null || $scope.serverConfig.proxyHeaderHostMode.length == 0) {
+                    $scope.serverConfig.proxyHeaderHostMode = $scope.ProxyHeaderHostModeDownstream;
+                }
 
                 return;
             }

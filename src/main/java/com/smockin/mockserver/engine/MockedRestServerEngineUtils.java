@@ -7,10 +7,7 @@ import com.smockin.admin.persistence.dao.RestfulMockDAO;
 import com.smockin.admin.persistence.entity.RestfulMock;
 import com.smockin.admin.persistence.entity.RestfulMockDefinitionOrder;
 import com.smockin.admin.persistence.entity.RestfulMockDefinitionRule;
-import com.smockin.admin.persistence.enums.ProxyModeTypeEnum;
-import com.smockin.admin.persistence.enums.RestMethodEnum;
-import com.smockin.admin.persistence.enums.RestMockTypeEnum;
-import com.smockin.admin.persistence.enums.SmockinUserRoleEnum;
+import com.smockin.admin.persistence.enums.*;
 import com.smockin.admin.service.HttpClientService;
 import com.smockin.mockserver.dto.MockedServerConfigDTO;
 import com.smockin.mockserver.exception.InboundParamMatchException;
@@ -83,9 +80,7 @@ public class MockedRestServerEngineUtils {
         debugInboundRequest(request);
 
         return (config.isProxyMode() && !isMultiUserMode)
-            ? handleProxyInterceptorMode(config.getProxyModeType(),
-                                         config.getProxyForwardUrl(),
-                                         config.isDoNotForwardWhen404Mock(),
+            ? handleProxyInterceptorMode(config,
                                          request,
                                          response)
             : handleMockLookup(request, response, isMultiUserMode, false);
@@ -145,11 +140,15 @@ public class MockedRestServerEngineUtils {
 
     }
 
-    Optional<String> handleProxyInterceptorMode(final ProxyModeTypeEnum proxyModeType,
-                                                final String proxyForwardUrl,
-                                                final boolean doNotForwardWhen404Mock,
+    Optional<String> handleProxyInterceptorMode(final MockedServerConfigDTO config,
                                                 final Request request,
                                                 final Response response) {
+        final ProxyModeTypeEnum proxyModeType = config.getProxyModeType();
+        final String proxyForwardUrl = config.getProxyForwardUrl();
+        final boolean doNotForwardWhen404Mock = config.isDoNotForwardWhen404Mock();
+        final ProxyHeaderHostModeEnum proxyHeaderHostMode = config.getProxyHeaderHostMode();
+        final String proxyFixedHeaderHost = config.getProxyFixedHeaderHost();
+
         logger.debug("handleProxyInterceptorMode called");
 
         try {
@@ -168,12 +167,12 @@ public class MockedRestServerEngineUtils {
                 }
 
                 // Make downstream client call of no mock was found
-                return handleClientDownstreamProxyCallResponse(executeClientDownstreamProxyCall(proxyForwardUrl, request), response);
+                return handleClientDownstreamProxyCallResponse(executeClientDownstreamProxyCall(proxyForwardUrl, proxyHeaderHostMode, proxyFixedHeaderHost, request), response);
             }
 
             // Default to REACTIVE mode...
 
-            final HttpClientResponseDTO httpClientResponse = executeClientDownstreamProxyCall(proxyForwardUrl, request);
+            final HttpClientResponseDTO httpClientResponse = executeClientDownstreamProxyCall(proxyForwardUrl, proxyHeaderHostMode, proxyFixedHeaderHost, request);
 
             if (HttpStatus.NOT_FOUND.value() == httpClientResponse.getStatus()) {
 
@@ -190,7 +189,10 @@ public class MockedRestServerEngineUtils {
 
     }
 
-    HttpClientResponseDTO executeClientDownstreamProxyCall(final String proxyForwardUrl, final Request request)
+    HttpClientResponseDTO executeClientDownstreamProxyCall(final String proxyForwardUrl,
+                                                           final ProxyHeaderHostModeEnum proxyHeaderHostMode,
+                                                           final String proxyFixedHeaderHost,
+                                                           final Request request)
             throws ValidationException {
 
         if (logger.isDebugEnabled()) {
@@ -211,11 +213,31 @@ public class MockedRestServerEngineUtils {
                 .stream()
                 .collect(Collectors.toMap(k -> k, v -> request.headers(v))));
 
-        String host = StringUtils.remove(proxyForwardUrl, HttpClientService.HTTPS_PROTOCOL);
-        host = StringUtils.remove(host, HttpClientService.HTTP_PROTOCOL);
-        httpClientCallDTO.getHeaders().put(HttpHeaders.HOST, host);
+        String hostForHeader = getHeaderHostValue(
+                proxyHeaderHostMode,
+                httpClientCallDTO.getHeaders().get(HttpHeaders.HOST),
+                proxyForwardUrl,
+                proxyFixedHeaderHost);
+        httpClientCallDTO.getHeaders().put(HttpHeaders.HOST, hostForHeader);
 
         return httpClientService.handleExternalCall(httpClientCallDTO);
+    }
+
+    String getHeaderHostValue(ProxyHeaderHostModeEnum proxyHeaderHostMode, String proxyFromRequest, String proxyForwardUrl, String proxyFixedHeaderHost) {
+        String downstreamHost = StringUtils.remove(proxyForwardUrl, HttpClientService.HTTPS_PROTOCOL);
+        downstreamHost = StringUtils.remove(downstreamHost, HttpClientService.HTTP_PROTOCOL);
+        switch (proxyHeaderHostMode) {
+            case FIXED:
+                return proxyFixedHeaderHost;
+            case FROM_REQUEST:
+                 return proxyFromRequest == null ? downstreamHost : proxyFromRequest;
+            case SMART:
+                if (!downstreamHost.endsWith("amazonaws.com")) {
+                    return downstreamHost;
+                }
+                return proxyFromRequest == null ? downstreamHost : proxyFromRequest;
+        }
+        return downstreamHost;
     }
 
     Optional<String> handleClientDownstreamProxyCallResponse(final HttpClientResponseDTO httpClientResponse,
