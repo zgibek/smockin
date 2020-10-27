@@ -213,24 +213,35 @@ public class MockedRestServerEngineUtils {
                 .stream()
                 .collect(Collectors.toMap(k -> k, v -> request.headers(v))));
 
-        String hostForHeader = getHeaderHostValue(
-                proxyHeaderHostMode,
-                httpClientCallDTO.getHeaders().get(HttpHeaders.HOST),
-                proxyForwardUrl,
-                proxyFixedHeaderHost);
-        logger.debug("Using header.Host {}, based on mode: {}, real value from request {} and downstream URL {}",
-                hostForHeader, proxyHeaderHostMode, httpClientCallDTO.getHeaders().get(HttpHeaders.HOST), proxyForwardUrl);
-        httpClientCallDTO.getHeaders().put(HttpHeaders.HOST, hostForHeader);
+        // adapt headers for AWS
+        adaptRequestForAWS(proxyForwardUrl, proxyHeaderHostMode, proxyFixedHeaderHost, httpClientCallDTO);
 
-        // remove Content-Length
         httpClientCallDTO.getHeaders().remove(HttpHeaders.CONTENT_LENGTH);
 
         return httpClientService.handleExternalCall(httpClientCallDTO);
     }
 
-    String getHeaderHostValue(ProxyHeaderHostModeEnum proxyHeaderHostMode, String proxyFromRequest, String proxyForwardUrl, String proxyFixedHeaderHost) {
+    private void adaptRequestForAWS(String proxyForwardUrl, ProxyHeaderHostModeEnum proxyHeaderHostMode, String proxyFixedHeaderHost, HttpClientCallDTO httpClientCallDTO) {
         String downstreamHost = StringUtils.remove(proxyForwardUrl, HttpClientService.HTTPS_PROTOCOL);
         downstreamHost = StringUtils.remove(downstreamHost, HttpClientService.HTTP_PROTOCOL);
+        final boolean isAwsCall = downstreamHost.endsWith("amazonaws.com");
+
+        String hostForHeader = getHeaderHostValue(
+                proxyHeaderHostMode,
+                httpClientCallDTO.getHeaders().get(HttpHeaders.HOST),
+                downstreamHost,
+                proxyFixedHeaderHost);
+        logger.debug("Using header.Host {}, based on mode: {}, real value from request {} and downstream URL {}",
+                hostForHeader, proxyHeaderHostMode, httpClientCallDTO.getHeaders().get(HttpHeaders.HOST), proxyForwardUrl);
+        httpClientCallDTO.getHeaders().put(HttpHeaders.HOST, hostForHeader);
+
+        if (isAwsCall) {
+            httpClientCallDTO.getHeaders().remove(HttpHeaders.CONTENT_LENGTH);
+            httpClientCallDTO.setUrl("https://" + hostForHeader);
+        };
+    }
+
+    String getHeaderHostValue(ProxyHeaderHostModeEnum proxyHeaderHostMode, String proxyFromRequest, String downstreamHost, String proxyFixedHeaderHost) {
         switch (proxyHeaderHostMode) {
             case FIXED:
                 return proxyFixedHeaderHost;
