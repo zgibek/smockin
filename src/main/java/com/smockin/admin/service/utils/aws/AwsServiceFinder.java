@@ -14,14 +14,17 @@ public class AwsServiceFinder {
 
     /** STS Actions */
     private static Set<String> stsActions = new HashSet<>(Arrays.asList(
-            "GetCallerIdentity"
+            "GetCallerIdentity",
+            "AssumeRole"
     ));
 
     /** CostExplorer Actions */
     private static Set<String> ceActions = new HashSet<>(Arrays.asList(
-            "GetReservationCoverage",
-            "GetReservationPurchaseRecommendation",
-            "AWSInsightsIndexService.GetReservationUtilization"
+            "AWSInsightsIndexService.GetReservationCoverage",
+            "AWSInsightsIndexService.GetReservationPurchaseRecommendation",
+            "AWSInsightsIndexService.GetReservationUtilization",
+            "AWSInsightsIndexService.GetCostAndUsage",
+            "AWSInsightsIndexService.GetRightsizingRecommendation"
     ));
 
     /** EC2 Actions */
