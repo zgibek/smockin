@@ -9,6 +9,10 @@ import com.smockin.admin.persistence.entity.RestfulMockDefinitionOrder;
 import com.smockin.admin.persistence.entity.RestfulMockDefinitionRule;
 import com.smockin.admin.persistence.enums.*;
 import com.smockin.admin.service.HttpClientService;
+import com.smockin.admin.service.utils.aws.AWS4Signer;
+import com.smockin.admin.service.utils.aws.AwsProfile;
+import com.smockin.admin.service.utils.aws.AwsServiceFinder;
+import com.smockin.admin.service.utils.aws.auth.AWS4SignerBase;
 import com.smockin.mockserver.dto.MockedServerConfigDTO;
 import com.smockin.mockserver.exception.InboundParamMatchException;
 import com.smockin.mockserver.service.*;
@@ -28,9 +32,13 @@ import spark.Response;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -40,6 +48,7 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class MockedRestServerEngineUtils {
 
+    private static final String HEADER_X_SMOCKIN_AWS_SERVICE = "x-smockin-aws-service";
     private final Logger logger = LoggerFactory.getLogger(MockedRestServerEngineUtils.class);
 
     @Autowired
@@ -224,36 +233,94 @@ public class MockedRestServerEngineUtils {
     private void adaptRequestForAWS(String proxyForwardUrl, ProxyHeaderHostModeEnum proxyHeaderHostMode, String proxyFixedHeaderHost, HttpClientCallDTO httpClientCallDTO) {
         String downstreamHost = StringUtils.remove(proxyForwardUrl, HttpClientService.HTTPS_PROTOCOL);
         downstreamHost = StringUtils.remove(downstreamHost, HttpClientService.HTTP_PROTOCOL);
+
+        final boolean isAwsServiceCall = isAwsServiceCall(httpClientCallDTO);
         final boolean isAwsCall = downstreamHost.endsWith("amazonaws.com");
 
-        String hostForHeader = getHeaderHostValue(
+        String hostForHeader = determineHeaderHostValue(
+                isAwsServiceCall,
                 proxyHeaderHostMode,
-                httpClientCallDTO.getHeaders().get(HttpHeaders.HOST),
+                httpClientCallDTO,
                 downstreamHost,
                 proxyFixedHeaderHost);
         logger.debug("Using header.Host {}, based on mode: {}, real value from request {} and downstream URL {}",
                 hostForHeader, proxyHeaderHostMode, httpClientCallDTO.getHeaders().get(HttpHeaders.HOST), proxyForwardUrl);
         httpClientCallDTO.getHeaders().put(HttpHeaders.HOST, hostForHeader);
 
-        if (isAwsCall) {
+        if (isAwsServiceCall) {
+            final String service = httpClientCallDTO.getHeaders().get(HttpHeaders.HOST);
+            httpClientCallDTO.setUrl("https://" + hostForHeader);
+            try {
+                AwsProfile awsProfile = new AwsProfile();
+                AWS4Signer aws4Signer = new AWS4Signer(awsProfile.getAwsAccessKey(), awsProfile.getAwsSecretKey(),
+                        new URL(httpClientCallDTO.getUrl()), httpClientCallDTO.getMethod().toString(),
+                        httpClientCallDTO.getHeaders().get(HEADER_X_SMOCKIN_AWS_SERVICE).toLowerCase(),
+                        awsProfile.getRegion()
+                );
+                final String bodyHash = AWS4Signer.computeContentHash(httpClientCallDTO.getBody());
+                AWS4Signer.updateHeaderWithContentHash(httpClientCallDTO.getHeaders(), bodyHash);
+                String signature = aws4Signer.computeSignature(httpClientCallDTO.getHeaders(), null);
+                AWS4Signer.updateHeaderWithAuthorization(httpClientCallDTO.getHeaders(), signature);
+            } catch (MalformedURLException urlException) {
+                logger.error("Cannot construct endpoint for " + service, urlException);
+            }
+        } else if (isAwsCall) {
             httpClientCallDTO.getHeaders().remove(HttpHeaders.CONTENT_LENGTH);
             httpClientCallDTO.setUrl("https://" + hostForHeader);
         };
     }
 
-    String getHeaderHostValue(ProxyHeaderHostModeEnum proxyHeaderHostMode, String proxyFromRequest, String downstreamHost, String proxyFixedHeaderHost) {
+    private boolean isAwsServiceCall(HttpClientCallDTO httpClientCallDTO) {
+        final String authHeader = httpClientCallDTO.getHeaders().get(HttpHeaders.AUTHORIZATION);
+        if (authHeader == null) {
+            return false;
+        }
+        final boolean isAwsService = authHeader.startsWith("AWS4-HMAC-SHA256 ");
+        if (isAwsService) {
+            logger.debug("AWS Service call detected for: " + httpClientCallDTO.getBody());
+        }
+        return isAwsService;
+    }
+
+    String determineHeaderHostValue(boolean isAwsServiceCall, ProxyHeaderHostModeEnum proxyHeaderHostMode, HttpClientCallDTO httpClientCallDTO, String downstreamHost, String proxyFixedHeaderHost) {
+        final String proxyFromRequest = httpClientCallDTO.getHeaders().get(HttpHeaders.HOST);
         switch (proxyHeaderHostMode) {
             case FIXED:
                 return proxyFixedHeaderHost;
             case FROM_REQUEST:
                  return proxyFromRequest == null ? downstreamHost : proxyFromRequest;
             case SMART:
-                if (!downstreamHost.endsWith("amazonaws.com")) {
+                if (isAwsServiceCall) {
+                    final String awsAction = decodeAwsServiceActionFromRequest(httpClientCallDTO);
+                    logger.debug("AWS.determined-action: " + awsAction);
+                    final AwsServiceFinder.AwsService awsService = AwsServiceFinder.findServiceForAction(awsAction);
+                    if (awsService == null) {
+                        logger.error("Can't map AWS Service for action: " + awsAction);
+                    } else {
+                        logger.debug("AWS.determined-service: " + awsService);
+                    }
+                    httpClientCallDTO.getHeaders().put(HEADER_X_SMOCKIN_AWS_SERVICE, awsService.toString());
+                    return AwsServiceFinder.findEndpointForService(awsService);
+                } else if (!downstreamHost.endsWith("amazonaws.com")) {
                     return downstreamHost;
                 }
                 return proxyFromRequest == null ? downstreamHost : proxyFromRequest;
         }
         return downstreamHost;
+    }
+
+    private String decodeAwsServiceActionFromRequest(HttpClientCallDTO httpClientCallDTO) {
+        String body = httpClientCallDTO.getBody();
+        Pattern actionPattern = Pattern.compile("Action.([^&]*)");
+        Matcher actionMatter = actionPattern.matcher(body);
+        if (actionMatter.find() && actionMatter.groupCount() >= 1) {
+            return actionMatter.group(1);
+        }
+        final String awsTarget = httpClientCallDTO.getHeaders().get(AWS4SignerBase.HEADER_X_AMZ_TARGET);
+        if (awsTarget != null) {
+            return awsTarget;
+        }
+        return null;
     }
 
     Optional<String> handleClientDownstreamProxyCallResponse(final HttpClientResponseDTO httpClientResponse,

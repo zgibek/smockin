@@ -66,7 +66,8 @@ public class RestfulMockDAOImpl implements RestfulMockDAOCustom {
     @Override
     public RestfulMock findActiveByMethodAndPathPatternAndTypesForSingleUser(final RestMethodEnum method, final String path, final List<RestMockTypeEnum> mockTypes) {
 
-        final String part1 = StringUtils.split(path, AntPathMatcher.DEFAULT_PATH_SEPARATOR)[0];
+        final String[] pathElements = StringUtils.split(path, AntPathMatcher.DEFAULT_PATH_SEPARATOR);
+        final String part1 = pathElements.length > 0 ? pathElements[0] : "";
 
         final List<RestfulMock> mocks = entityManager.createQuery("FROM RestfulMock rm "
                 + " WHERE rm.method = :method "
@@ -87,7 +88,8 @@ public class RestfulMockDAOImpl implements RestfulMockDAOCustom {
     @Override
     public RestfulMock findActiveByMethodAndPathPatternAndTypesForMultiUser(final RestMethodEnum method, final String path, final List<RestMockTypeEnum> mockTypes) {
 
-        final String part1 = StringUtils.split(path, AntPathMatcher.DEFAULT_PATH_SEPARATOR)[0];
+        final String[] pathElements = StringUtils.split(path, AntPathMatcher.DEFAULT_PATH_SEPARATOR);
+        final String part1 = pathElements.length > 0 ? pathElements[0] : "";
 
         final List<RestfulMock> mocks = entityManager.createQuery("FROM RestfulMock rm "
                 + " WHERE rm.method = :method "

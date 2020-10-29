@@ -458,7 +458,7 @@ public class RestfulMockServiceUtils {
 
     String formatInitialStateBody(String initialBody) {
 
-        initialBody = StringUtils.trim(initialBody);
+        //initialBody = StringUtils.trim(initialBody);
 
         if (initialBody.startsWith("{")
                 && initialBody.endsWith("}")) {
