@@ -214,6 +214,8 @@ public class MockedRestServerEngineUtils {
                 ? ( "?" + request.queryString() )
                 : "";
         httpClientCallDTO.setUrl(proxyForwardUrl + request.pathInfo() + reqParams);
+        httpClientCallDTO.setPathInfo(request.pathInfo());
+        httpClientCallDTO.setRequestParams(reqParams);
         httpClientCallDTO.setMethod(RestMethodEnum.valueOf(request.requestMethod()));
         httpClientCallDTO.setBody(request.body());
 
@@ -247,7 +249,7 @@ public class MockedRestServerEngineUtils {
 
         if (isAwsServiceCall) {
             final String service = httpClientCallDTO.getHeaders().get(HttpHeaders.HOST);
-            httpClientCallDTO.setUrl("https://" + hostForHeader);
+            httpClientCallDTO.setUrl("https://" + hostForHeader + httpClientCallDTO.getPathInfo() + httpClientCallDTO.getRequestParams());
             try {
                 AwsProfile awsProfile = new AwsProfile();
                 AWS4Signer aws4Signer = new AWS4Signer(awsProfile.getAwsAccessKey(), awsProfile.getAwsSecretKey(),
@@ -264,7 +266,9 @@ public class MockedRestServerEngineUtils {
             }
         } else if (isAwsCall) {
             httpClientCallDTO.getHeaders().remove(HttpHeaders.CONTENT_LENGTH);
-            httpClientCallDTO.setUrl("https://" + hostForHeader);
+            httpClientCallDTO.setUrl("https://" + hostForHeader
+                    + httpClientCallDTO.getPathInfo() + httpClientCallDTO.getRequestParams()
+            );
         };
     }
 

@@ -14,6 +14,8 @@ public class HttpClientCallDTO {
     private Map<String, String> headers = new HashMap<>();
     private String url;
     private String body;
+    private String pathInfo;
+    private String requestParams;
 
     public HttpClientCallDTO() { }
 
@@ -50,4 +52,9 @@ public class HttpClientCallDTO {
         this.body = body;
     }
 
+    public String getPathInfo() { return pathInfo; }
+    public void setPathInfo(String pathInfo) { this.pathInfo = pathInfo; }
+
+    public String getRequestParams() { return requestParams; }
+    public void setRequestParams(String requestParams) { this.requestParams = requestParams; }
 }
