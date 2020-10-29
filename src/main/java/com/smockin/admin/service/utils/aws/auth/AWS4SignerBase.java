@@ -42,12 +42,14 @@ public abstract class AWS4SignerBase {
     public static final String HEADER_X_AMZ_CONTENT_SHA_256 = "X-Amz-Content-sha256";
     public static final String HEADER_X_AMZ_DATE = "X-Amz-Date";
     public static final String HEADER_X_AMZ_TARGET = "X-Amz-Target";
+    public static final String HEADER_X_AMZ_SECURITY_TOKEN = "x-amz-security-token";
 
     protected static final HashSet<String> HEADERS_TO_INCLUDE_IN_AUTH = new HashSet<String>() {{
         add(HttpHeaders.HOST);
         add(HEADER_X_AMZ_DATE);
         add(HEADER_X_AMZ_CONTENT_SHA_256);
         add(HEADER_X_AMZ_TARGET);
+        add(HEADER_X_AMZ_SECURITY_TOKEN);
     }};
 
     /**
