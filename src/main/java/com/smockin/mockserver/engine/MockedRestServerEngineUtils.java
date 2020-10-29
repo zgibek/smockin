@@ -225,8 +225,6 @@ public class MockedRestServerEngineUtils {
         // adapt headers for AWS
         adaptRequestForAWS(proxyForwardUrl, proxyHeaderHostMode, proxyFixedHeaderHost, httpClientCallDTO);
 
-        httpClientCallDTO.getHeaders().remove(HttpHeaders.CONTENT_LENGTH);
-
         return httpClientService.handleExternalCall(httpClientCallDTO);
     }
 
@@ -235,7 +233,6 @@ public class MockedRestServerEngineUtils {
         downstreamHost = StringUtils.remove(downstreamHost, HttpClientService.HTTP_PROTOCOL);
 
         final boolean isAwsServiceCall = isAwsServiceCall(httpClientCallDTO);
-        final boolean isAwsCall = downstreamHost.endsWith("amazonaws.com");
 
         String hostForHeader = determineHeaderHostValue(
                 isAwsServiceCall,
@@ -246,6 +243,7 @@ public class MockedRestServerEngineUtils {
         logger.debug("Using header.Host {}, based on mode: {}, real value from request {} and downstream URL {}",
                 hostForHeader, proxyHeaderHostMode, httpClientCallDTO.getHeaders().get(HttpHeaders.HOST), proxyForwardUrl);
         httpClientCallDTO.getHeaders().put(HttpHeaders.HOST, hostForHeader);
+        final boolean isAwsCall = hostForHeader.endsWith("amazonaws.com");
 
         if (isAwsServiceCall) {
             final String service = httpClientCallDTO.getHeaders().get(HttpHeaders.HOST);
