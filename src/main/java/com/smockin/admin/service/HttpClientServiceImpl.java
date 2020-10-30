@@ -305,6 +305,11 @@ public class HttpClientServiceImpl implements HttpClientService {
                 final HttpContext context) throws ProtocolException {
             final URI uri = getLocationURI(request, response, context);
             final String method = request.getRequestLine().getMethod();
+            logger.info("======================================================================");
+            logger.info("Doing redirection for request: " + request.toString());
+            logger.info("Response: " + response.getStatusLine().getStatusCode() + ": " + response.toString());
+            logger.info("Context: " + context);
+            logger.info("======================================================================");
             if (method.equalsIgnoreCase(HttpHead.METHOD_NAME)) {
                 return new HttpHead(uri);
             } else if (method.equalsIgnoreCase(HttpGet.METHOD_NAME)) {

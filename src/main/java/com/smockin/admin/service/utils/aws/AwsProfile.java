@@ -71,7 +71,7 @@ public class AwsProfile {
     }
 
     public String getRegion() {
-        return "us-east-1";
+        return region;
     }
 
 }
