@@ -49,7 +49,7 @@ public abstract class AWS4SignerBase {
         add(HEADER_X_AMZ_DATE.toLowerCase());
         add(HEADER_X_AMZ_CONTENT_SHA_256.toLowerCase());
         add(HEADER_X_AMZ_TARGET.toLowerCase());
-        add(HEADER_X_AMZ_SECURITY_TOKEN.toLowerCase());
+        //add(HEADER_X_AMZ_SECURITY_TOKEN.toLowerCase());
     }};
 
     /**
