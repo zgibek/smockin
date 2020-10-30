@@ -231,7 +231,7 @@ public class HttpClientServiceImpl implements HttpClientService {
             }
 
         } else {
-
+            logger.debug("Request just before execute: " + request.toString());
             httpResponse = request.execute().returnResponse();
         }
 

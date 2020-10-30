@@ -264,6 +264,7 @@ public class MockedRestServerEngineUtils {
             } catch (MalformedURLException urlException) {
                 logger.error("Cannot construct endpoint for " + service, urlException);
             }
+            httpClientCallDTO.getHeaders().remove(HttpHeaders.CONTENT_LENGTH);
         } else if (isAwsCall) {
             httpClientCallDTO.getHeaders().remove(HttpHeaders.CONTENT_LENGTH);
             httpClientCallDTO.setUrl("https://" + hostForHeader

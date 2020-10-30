@@ -45,11 +45,11 @@ public abstract class AWS4SignerBase {
     public static final String HEADER_X_AMZ_SECURITY_TOKEN = "x-amz-security-token";
 
     protected static final HashSet<String> HEADERS_TO_INCLUDE_IN_AUTH = new HashSet<String>() {{
-        add(HttpHeaders.HOST);
-        add(HEADER_X_AMZ_DATE);
-        add(HEADER_X_AMZ_CONTENT_SHA_256);
-        add(HEADER_X_AMZ_TARGET);
-        add(HEADER_X_AMZ_SECURITY_TOKEN);
+        add(HttpHeaders.HOST.toLowerCase());
+        add(HEADER_X_AMZ_DATE.toLowerCase());
+        add(HEADER_X_AMZ_CONTENT_SHA_256.toLowerCase());
+        add(HEADER_X_AMZ_TARGET.toLowerCase());
+        add(HEADER_X_AMZ_SECURITY_TOKEN.toLowerCase());
     }};
 
     /**
@@ -90,7 +90,7 @@ public abstract class AWS4SignerBase {
 
         StringBuilder buffer = new StringBuilder();
         for (String header : sortedHeaders) {
-            if (AWS4SignerBase.HEADERS_TO_INCLUDE_IN_AUTH.contains(header)) {
+            if (AWS4SignerBase.HEADERS_TO_INCLUDE_IN_AUTH.contains(header.toLowerCase())) {
                 if (buffer.length() > 0) buffer.append(";");
                 buffer.append(header.toLowerCase());
             }
@@ -118,7 +118,7 @@ public abstract class AWS4SignerBase {
         // space.
         StringBuilder buffer = new StringBuilder();
         for (String key : sortedHeaders) {
-            if (HEADERS_TO_INCLUDE_IN_AUTH.contains(key)) {
+            if (HEADERS_TO_INCLUDE_IN_AUTH.contains(key.toLowerCase())) {
                 buffer.append(key.toLowerCase().replaceAll("\\s+", " ") + ":" + headers.get(key).replaceAll("\\s+", " "));
                 buffer.append("\n");
             }

@@ -53,7 +53,7 @@ public class AwsProfile {
                 requestedProfile = profile.equalsIgnoreCase(matcher.group(1));
                 continue;
             }
-            if (requestedProfile) {
+            if (requestedProfile && line.trim().length()>0 && line.contains("=")) {
                 outputProfile.append(line).append('\n');
             }
         }
@@ -71,7 +71,7 @@ public class AwsProfile {
     }
 
     public String getRegion() {
-        return region;
+        return "us-east-1";
     }
 
 }
