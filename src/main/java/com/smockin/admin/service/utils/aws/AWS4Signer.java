@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import java.net.URL;
 import java.util.Date;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * zgibek on 2020-10-28 23:56
@@ -59,10 +60,26 @@ public class AWS4Signer extends AWS4SignerBase {
      */
     public static void updateHeaderWithContentHash(Map<String, String> headers, String contentHash) {
         assert headers != null;
+        removeHeader(headers, HEADER_X_AMZ_CONTENT_SHA_256);
         headers.put(HEADER_X_AMZ_CONTENT_SHA_256, contentHash);
     }
 
+    /**
+     * Removes from headers given header despite the lower/upper case letters.
+     * @param headers headers to review.
+     * @param header header to remove.
+     */
+    private static void removeHeader(final Map<String, String> headers, final String header) {
+        Set<String> keys = headers.keySet();
+        keys.forEach(key -> {
+            if (key.equalsIgnoreCase(header)) {
+                headers.remove(key);
+            }
+        });
+    }
+
     public static void updateHeaderWithAuthorization(Map<String, String> headers, String awsAuthorizationHeaderValue) {
+        removeHeader(headers, HttpHeaders.AUTHORIZATION);
         headers.put(HttpHeaders.AUTHORIZATION, awsAuthorizationHeaderValue);
     }
 
@@ -91,6 +108,7 @@ public class AWS4Signer extends AWS4SignerBase {
         String dateTimeStamp = dateTimeFormat.format(now);
 
         // update the headers with required 'x-amz-date'
+        removeHeader(headers, HEADER_X_AMZ_DATE);
         headers.put(HEADER_X_AMZ_DATE, dateTimeStamp);
 
         // canonicalize the headers; we need the set of header names as well as the
