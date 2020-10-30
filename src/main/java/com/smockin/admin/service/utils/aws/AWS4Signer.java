@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -70,12 +71,14 @@ public class AWS4Signer extends AWS4SignerBase {
      * @param header header to remove.
      */
     private static void removeHeader(final Map<String, String> headers, final String header) {
-        Set<String> keys = headers.keySet();
-        keys.forEach(key -> {
+
+        Set<String> keysToRemove = new HashSet<>();
+        headers.keySet().forEach(key -> {
             if (key.equalsIgnoreCase(header)) {
-                headers.remove(key);
+                keysToRemove.add(key);
             }
         });
+        keysToRemove.forEach(key -> headers.remove(key));
     }
 
     public static void updateHeaderWithAuthorization(Map<String, String> headers, String awsAuthorizationHeaderValue) {
