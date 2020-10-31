@@ -410,8 +410,7 @@ public class MockedRestServerEngineUtils {
                           final Request req,
                           final Response res,
                           final boolean ignore404MockResponses) {
-        logger.debug("processRequest called");
-
+        logger.debug("processRequest called for mock: " + mock.getPath());
         RestfulResponseDTO outcome;
 
         switch (mock.getMockType()) {
@@ -436,7 +435,8 @@ public class MockedRestServerEngineUtils {
         if (outcome == null) {
             // Load in default values
             outcome = getDefault(mock);
-        } else if (ignore404MockResponses
+        }
+        if (ignore404MockResponses
                         && HttpStatus.NOT_FOUND.value() == outcome.getHttpStatusCode()) {
             // Yuk! Bit of a hacky work around returning null so as to distinguish an ignored 404...
             return null;
