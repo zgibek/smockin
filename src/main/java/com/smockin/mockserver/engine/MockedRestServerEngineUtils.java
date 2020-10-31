@@ -10,6 +10,7 @@ import com.smockin.admin.persistence.entity.RestfulMockDefinitionRule;
 import com.smockin.admin.persistence.enums.*;
 import com.smockin.admin.service.HttpClientService;
 import com.smockin.admin.service.utils.aws.AWS4Signer;
+import com.smockin.admin.service.utils.aws.AwsCredentials;
 import com.smockin.admin.service.utils.aws.AwsProfile;
 import com.smockin.admin.service.utils.aws.AwsServiceFinder;
 import com.smockin.admin.service.utils.aws.auth.AWS4SignerBase;
@@ -36,6 +37,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -88,11 +90,27 @@ public class MockedRestServerEngineUtils {
 
         debugInboundRequest(request);
 
-        return (config.isProxyMode() && !isMultiUserMode)
-            ? handleProxyInterceptorMode(config,
-                                         request,
-                                         response)
-            : handleMockLookup(request, response, isMultiUserMode, false);
+        final Optional<String> opMockedResponse = (config.isProxyMode() && !isMultiUserMode)
+                ? handleProxyInterceptorMode(config,
+                request,
+                response)
+                : handleMockLookup(request, response, isMultiUserMode, false);
+        opMockedResponse.ifPresent(mockedResponse -> {
+            logger.debug("===========================================================================\n" +
+                    "Got response from mocked/proxy:\n"+
+                    mockedResponse + "\n" +
+                    "===========================================================================");
+            if (mockedResponse != null && mockedResponse.startsWith("<AssumeRoleResponse ")) {
+                Pattern accessKeyPattern = Pattern.compile("<AccessKeyId>(.*)</AccessKeyId>");
+                Pattern secretKeyPattern = Pattern.compile("<SecretAccessKey>(.*)</SecretAccessKey>");
+                Matcher accessKeyMatcher = accessKeyPattern.matcher(mockedResponse);
+                Matcher secretKeyMatcher = secretKeyPattern.matcher(mockedResponse);
+                if (accessKeyMatcher.find() && secretKeyMatcher.find()) {
+                    AwsCredentials.add(accessKeyMatcher.group(1), secretKeyMatcher.group(1));
+                }
+            }
+        });
+        return opMockedResponse;
     }
 
     Optional<String> handleMockLookup(final Request request,
@@ -253,7 +271,8 @@ public class MockedRestServerEngineUtils {
             httpClientCallDTO.setUrl("https://" + hostForHeader + httpClientCallDTO.getPathInfo() + httpClientCallDTO.getRequestParams());
             try {
                 AwsProfile awsProfile = new AwsProfile();
-                AWS4Signer aws4Signer = new AWS4Signer(awsProfile.getAwsAccessKey(), awsProfile.getAwsSecretKey(),
+                final String awsAccessKey = determineAwsAccessKeyBasedOnRequest(httpClientCallDTO.getHeaders());
+                AWS4Signer aws4Signer = new AWS4Signer(awsAccessKey, AwsCredentials.getSecretKeyFor(awsAccessKey),
                         new URL(httpClientCallDTO.getUrl()), httpClientCallDTO.getMethod().toString(),
                         httpClientCallDTO.getHeaders().get(HEADER_X_SMOCKIN_AWS_SERVICE).toLowerCase(),
                         awsProfile.getRegion()
@@ -263,8 +282,8 @@ public class MockedRestServerEngineUtils {
                 AWS4Signer.updateHeaderWithContentHash(httpClientCallDTO.getHeaders(), bodyHash);
                 String signature = aws4Signer.computeSignature(httpClientCallDTO.getHeaders(), null);
                 AWS4Signer.updateHeaderWithAuthorization(httpClientCallDTO.getHeaders(), signature);
-            } catch (MalformedURLException urlException) {
-                logger.error("Cannot construct endpoint for " + service, urlException);
+            } catch (Throwable throwable) {
+                logger.error("Cannot construct endpoint for " + service, throwable);
             }
             httpClientCallDTO.getHeaders().remove(HttpHeaders.CONTENT_LENGTH);
         } else if (isAwsCall) {
@@ -273,6 +292,31 @@ public class MockedRestServerEngineUtils {
                     + httpClientCallDTO.getPathInfo() + httpClientCallDTO.getRequestParams()
             );
         };
+    }
+
+    private String determineAwsAccessKeyBasedOnRequest(Map<String, String> headers) {
+        String accessKey = null;
+        if (headers != null && headers.containsKey(HttpHeaders.AUTHORIZATION)) {
+            String authHeader = headers.get(HttpHeaders.AUTHORIZATION);
+            if (authHeader.startsWith("AWS4-HMAC-SHA256 Credential=")) {
+                Matcher matcher = Pattern.compile("AWS4-HMAC-SHA256 Credential=([^/]*)/").matcher(authHeader);
+                if (matcher.find() && matcher.groupCount() == 1) {
+                    accessKey = matcher.group(1);
+                    logger.debug("Determined awsAccessKey based on Authorization header: " + accessKey);
+                }
+            }
+        }
+
+        if (AwsCredentials.getSecretKeyFor(accessKey) == null) {
+            logger.debug("AWSCredentials can't find secret for " + accessKey + " -> using the one from profile");
+            accessKey = null;
+        }
+
+        if (accessKey == null) {
+            AwsProfile profile = new AwsProfile();
+            accessKey = profile.getAwsAccessKey();
+        }
+        return accessKey;
     }
 
     private boolean isAwsServiceCall(HttpClientCallDTO httpClientCallDTO) {
@@ -298,6 +342,9 @@ public class MockedRestServerEngineUtils {
                 if (isAwsServiceCall) {
                     final String awsAction = decodeAwsServiceActionFromRequest(httpClientCallDTO);
                     logger.debug("AWS.determined-action: " + awsAction);
+                    if ("AssumeRole".equals(awsAction)) {
+                        AWS4Signer.removeHeader(httpClientCallDTO.getHeaders(), AWS4Signer.HEADER_X_AMZ_SECURITY_TOKEN);
+                    }
                     final AwsServiceFinder.AwsService awsService = AwsServiceFinder.findServiceForAction(awsAction);
                     if (awsService == null) {
                         logger.error("Can't map AWS Service for action: " + awsAction);

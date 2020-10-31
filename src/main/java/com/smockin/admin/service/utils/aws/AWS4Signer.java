@@ -38,6 +38,7 @@ public class AWS4Signer extends AWS4SignerBase {
         super(endpointUrl, httpMethod, serviceName, regionName);
         this.awsAccessKey = awsAccessKey;
         this.awsSecretKey = awsSecretKey;
+        logger.debug("AWS4Signer created for awsAccessKey: " + awsAccessKey);
     }
 
     /**
@@ -116,6 +117,7 @@ public class AWS4Signer extends AWS4SignerBase {
     public String computeSignature(Map<String, String> headers,
                                    Map<String, String> queryParameters, String dateTimeStamp) {
 
+        logger.debug("Computing signature for awsAccessKey: " + awsAccessKey);
         // update the headers with required 'x-amz-date'
         removeHeader(headers, HEADER_X_AMZ_DATE);
         headers.put(HEADER_X_AMZ_DATE, dateTimeStamp);
