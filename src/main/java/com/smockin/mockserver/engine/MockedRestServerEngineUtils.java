@@ -369,9 +369,18 @@ public class MockedRestServerEngineUtils {
         if (actionMatter.find() && actionMatter.groupCount() >= 1) {
             return actionMatter.group(1);
         }
-        final String awsTarget = httpClientCallDTO.getHeaders().get(AWS4SignerBase.HEADER_X_AMZ_TARGET);
+        final String awsTarget = getValueFromHeaderFor(httpClientCallDTO.getHeaders(), AWS4SignerBase.HEADER_X_AMZ_TARGET);
         if (awsTarget != null) {
             return awsTarget;
+        }
+        return null;
+    }
+
+    private String getValueFromHeaderFor(Map<String,String> headers, String header) {
+        for (String key : headers.keySet()) {
+            if (header.equalsIgnoreCase(key)) {
+                return headers.get(key);
+            }
         }
         return null;
     }
