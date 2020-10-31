@@ -3,7 +3,15 @@ package com.smockin.admin.service.utils.aws.auth;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.SimpleTimeZone;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -76,28 +84,6 @@ public abstract class AWS4SignerBase {
         dateTimeFormat.setTimeZone(new SimpleTimeZone(0, "UTC"));
         dateStampFormat = new SimpleDateFormat(DateStringFormat);
         dateStampFormat.setTimeZone(new SimpleTimeZone(0, "UTC"));
-    }
-
-    /**
-     * The standard UriEncode functions provided by your development platform may not work because of differences
-     * in implementation and related ambiguity in the underlying RFCs.
-     * We recommend that you write your own custom UriEncode function to ensure that your encoding will work.
-     *
-     * @see https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
-     */
-    public static String UriEncode(CharSequence input, boolean encodeSlash) {
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < input.length(); i++) {
-            char ch = input.charAt(i);
-            if ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || ch == '_' || ch == '-' || ch == '~' || ch == '.') {
-                result.append(ch);
-            } else if (ch == '/') {
-                result.append(encodeSlash ? "%2F" : ch);
-            } else {
-                result.append(toHexUTF8(ch));
-            }
-        }
-        return result.toString();
     }
 
     /**
