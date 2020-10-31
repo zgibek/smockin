@@ -110,6 +110,12 @@ public class AWS4Signer extends AWS4SignerBase {
         Date now = new Date();
         String dateTimeStamp = dateTimeFormat.format(now);
 
+        return computeSignature(headers, queryParameters, dateTimeStamp);
+    }
+
+    public String computeSignature(Map<String, String> headers,
+                                   Map<String, String> queryParameters, String dateTimeStamp) {
+
         // update the headers with required 'x-amz-date'
         removeHeader(headers, HEADER_X_AMZ_DATE);
         headers.put(HEADER_X_AMZ_DATE, dateTimeStamp);
@@ -134,7 +140,7 @@ public class AWS4Signer extends AWS4SignerBase {
         logger.debug("------------------------------------");
 
         // construct the string to be signed
-        String dateStamp = dateStampFormat.format(now);
+        String dateStamp = dateTimeStamp.substring(0, 8);
         String scope =  dateStamp + "/" + regionName + "/" + serviceName + "/" + TERMINATOR;
         String stringToSign = getStringToSign(SCHEME, ALGORITHM, dateTimeStamp, scope, canonicalRequest);
         logger.debug("--------- String to sign -----------");

@@ -258,6 +258,7 @@ public class MockedRestServerEngineUtils {
                         httpClientCallDTO.getHeaders().get(HEADER_X_SMOCKIN_AWS_SERVICE).toLowerCase(),
                         awsProfile.getRegion()
                 );
+                AWS4Signer.removeHeader(httpClientCallDTO.getHeaders(), HEADER_X_SMOCKIN_AWS_SERVICE);
                 final String bodyHash = AWS4Signer.computeContentHash(httpClientCallDTO.getBody());
                 AWS4Signer.updateHeaderWithContentHash(httpClientCallDTO.getHeaders(), bodyHash);
                 String signature = aws4Signer.computeSignature(httpClientCallDTO.getHeaders(), null);
@@ -303,6 +304,7 @@ public class MockedRestServerEngineUtils {
                     } else {
                         logger.debug("AWS.determined-service: " + awsService);
                     }
+                    AWS4Signer.removeHeader(httpClientCallDTO.getHeaders(), HEADER_X_SMOCKIN_AWS_SERVICE);
                     httpClientCallDTO.getHeaders().put(HEADER_X_SMOCKIN_AWS_SERVICE, awsService.toString());
                     return AwsServiceFinder.findEndpointForService(awsService);
                 } else if (!downstreamHost.endsWith("amazonaws.com")) {

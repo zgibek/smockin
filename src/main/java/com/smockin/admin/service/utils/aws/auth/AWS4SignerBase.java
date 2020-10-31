@@ -29,7 +29,6 @@ public abstract class AWS4SignerBase {
 
     /** SHA256 hash of an empty request body **/
     public static final String EMPTY_BODY_SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
-    public static final String UNSIGNED_PAYLOAD = "UNSIGNED-PAYLOAD";
 
     public static final String SCHEME = "AWS4";
     public static final String ALGORITHM = "HMAC-SHA256";
@@ -57,6 +56,7 @@ public abstract class AWS4SignerBase {
      */
     protected static final HashSet<String> HEADER_PREFIXES_TO_INCLUDE_IN_AUTH = new HashSet<String>() {{
         add(HttpHeaders.HOST.toLowerCase());
+        add(HttpHeaders.CONTENT_TYPE.toLowerCase());
         add("x-amz-");
     }};
 
