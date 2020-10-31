@@ -70,7 +70,7 @@ public class AWS4Signer extends AWS4SignerBase {
      * @param headers headers to review.
      * @param header header to remove.
      */
-    private static void removeHeader(final Map<String, String> headers, final String header) {
+    public static void removeHeader(final Map<String, String> headers, final String header) {
 
         Set<String> keysToRemove = new HashSet<>();
         headers.keySet().forEach(key -> {

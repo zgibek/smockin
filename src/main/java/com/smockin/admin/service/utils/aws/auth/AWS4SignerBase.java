@@ -39,17 +39,17 @@ public abstract class AWS4SignerBase {
     protected final SimpleDateFormat dateTimeFormat;
     protected final SimpleDateFormat dateStampFormat;
 
-    public static final String HEADER_X_AMZ_CONTENT_SHA_256 = "X-Amz-Content-sha256";
-    public static final String HEADER_X_AMZ_DATE = "X-Amz-Date";
-    public static final String HEADER_X_AMZ_TARGET = "X-Amz-Target";
+    public static final String HEADER_X_AMZ_CONTENT_SHA_256 = "x-amz-content-sha256";
+    public static final String HEADER_X_AMZ_DATE = "x-amz-date";
+    public static final String HEADER_X_AMZ_TARGET = "x-amz-target";
     public static final String HEADER_X_AMZ_SECURITY_TOKEN = "x-amz-security-token";
 
-    protected static final HashSet<String> HEADERS_TO_INCLUDE_IN_AUTH = new HashSet<String>() {{
+    /**
+     * @see https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
+     */
+    protected static final HashSet<String> HEADER_PREFIXES_TO_INCLUDE_IN_AUTH = new HashSet<String>() {{
         add(HttpHeaders.HOST.toLowerCase());
-        add(HEADER_X_AMZ_DATE.toLowerCase());
-        add(HEADER_X_AMZ_CONTENT_SHA_256.toLowerCase());
-        add(HEADER_X_AMZ_TARGET.toLowerCase());
-        //add(HEADER_X_AMZ_SECURITY_TOKEN.toLowerCase());
+        add("x-amz-");
     }};
 
     /**
@@ -79,6 +79,28 @@ public abstract class AWS4SignerBase {
     }
 
     /**
+     * The standard UriEncode functions provided by your development platform may not work because of differences
+     * in implementation and related ambiguity in the underlying RFCs.
+     * We recommend that you write your own custom UriEncode function to ensure that your encoding will work.
+     *
+     * @see https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
+     */
+    public static String UriEncode(CharSequence input, boolean encodeSlash) {
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < input.length(); i++) {
+            char ch = input.charAt(i);
+            if ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || ch == '_' || ch == '-' || ch == '~' || ch == '.') {
+                result.append(ch);
+            } else if (ch == '/') {
+                result.append(encodeSlash ? "%2F" : ch);
+            } else {
+                result.append(toHexUTF8(ch));
+            }
+        }
+        return result.toString();
+    }
+
+    /**
      * Returns the canonical collection of header names that will be included in
      * the signature. For AWS4, all header names must be included in the process
      * in sorted canonicalized order.
@@ -90,13 +112,22 @@ public abstract class AWS4SignerBase {
 
         StringBuilder buffer = new StringBuilder();
         for (String header : sortedHeaders) {
-            if (AWS4SignerBase.HEADERS_TO_INCLUDE_IN_AUTH.contains(header.toLowerCase())) {
+            if (shouldSignHeader(header)) {
                 if (buffer.length() > 0) buffer.append(";");
                 buffer.append(header.toLowerCase());
             }
         }
 
         return buffer.toString();
+    }
+
+    private static boolean shouldSignHeader(String header) {
+        for (String prefix : HEADER_PREFIXES_TO_INCLUDE_IN_AUTH) {
+            if (header.toLowerCase().startsWith(prefix)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -118,7 +149,7 @@ public abstract class AWS4SignerBase {
         // space.
         StringBuilder buffer = new StringBuilder();
         for (String key : sortedHeaders) {
-            if (HEADERS_TO_INCLUDE_IN_AUTH.contains(key.toLowerCase())) {
+            if (shouldSignHeader(key)) {
                 buffer.append(key.toLowerCase().replaceAll("\\s+", " ") + ":" + headers.get(key).replaceAll("\\s+", " "));
                 buffer.append("\n");
             }

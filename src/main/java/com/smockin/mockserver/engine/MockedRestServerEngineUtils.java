@@ -244,6 +244,7 @@ public class MockedRestServerEngineUtils {
                 proxyFixedHeaderHost);
         logger.debug("Using header.Host {}, based on mode: {}, real value from request {} and downstream URL {}",
                 hostForHeader, proxyHeaderHostMode, httpClientCallDTO.getHeaders().get(HttpHeaders.HOST), proxyForwardUrl);
+        AWS4Signer.removeHeader(httpClientCallDTO.getHeaders(), HttpHeaders.HOST);
         httpClientCallDTO.getHeaders().put(HttpHeaders.HOST, hostForHeader);
         final boolean isAwsCall = hostForHeader.endsWith("amazonaws.com");
 
