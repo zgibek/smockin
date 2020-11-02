@@ -1,5 +1,6 @@
 package com.smockin.admin.persistence.entity;
 
+import com.smockin.admin.persistence.enums.ProxyHeaderHostModeEnum;
 import com.smockin.admin.persistence.enums.ProxyModeTypeEnum;
 import com.smockin.admin.persistence.enums.ServerTypeEnum;
 import org.hibernate.annotations.ColumnDefault;
@@ -48,6 +49,13 @@ public class ServerConfig extends Identifier {
     @ColumnDefault("false")
     @Column(name = "NO_FORWARD_WHEN_404_MOCK", nullable = false)
     private boolean doNotForwardWhen404Mock;
+
+    @Column(name = "PROXY_HEADER_HOST_MODE")
+    @Enumerated(EnumType.STRING)
+    private ProxyHeaderHostModeEnum proxyHeaderHostMode;
+
+    @Column(name = "PROXY_FIXED_HEADER_HOST")
+    private String proxyFixedHeaderHost;
 
     @ElementCollection(fetch = FetchType.EAGER)
     private Map<String, String> nativeProperties = new HashMap<>();
@@ -114,6 +122,18 @@ public class ServerConfig extends Identifier {
     }
     public void setProxyModeType(ProxyModeTypeEnum proxyModeType) {
         this.proxyModeType = proxyModeType;
+    }
+
+    public ProxyHeaderHostModeEnum getProxyHeaderHostMode() { return proxyHeaderHostMode; }
+
+    public void setProxyHeaderHostMode(ProxyHeaderHostModeEnum proxyHeaderHostMode) { this.proxyHeaderHostMode = proxyHeaderHostMode; }
+
+    public String getProxyFixedHeaderHost() {
+        return proxyFixedHeaderHost;
+    }
+
+    public void setProxyFixedHeaderHost(String proxyFixedHeaderHost) {
+        this.proxyFixedHeaderHost = proxyFixedHeaderHost;
     }
 
     public String getProxyForwardUrl() {

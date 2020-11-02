@@ -6,6 +6,7 @@ import com.smockin.admin.exception.ValidationException;
 import com.smockin.admin.persistence.dao.RestfulMockDAO;
 import com.smockin.admin.persistence.dao.ServerConfigDAO;
 import com.smockin.admin.persistence.entity.ServerConfig;
+import com.smockin.admin.persistence.enums.ProxyHeaderHostModeEnum;
 import com.smockin.admin.persistence.enums.ServerTypeEnum;
 import com.smockin.admin.service.utils.UserTokenServiceUtils;
 import com.smockin.mockserver.dto.MockServerState;
@@ -134,6 +135,8 @@ public class MockedServerEngineServiceImpl implements MockedServerEngineService 
                 serverConfig.getProxyModeType(),
                 serverConfig.getProxyForwardUrl(),
                 serverConfig.isDoNotForwardWhen404Mock(),
+                serverConfig.getProxyHeaderHostMode(),
+                serverConfig.getProxyFixedHeaderHost(),
                 serverConfig.getNativeProperties()
         );
 
@@ -162,9 +165,13 @@ public class MockedServerEngineServiceImpl implements MockedServerEngineService 
         serverConfig.setProxyModeType(config.getProxyModeType());
         serverConfig.setProxyForwardUrl(config.getProxyForwardUrl());
         serverConfig.setDoNotForwardWhen404Mock(config.isDoNotForwardWhen404Mock());
-
+        serverConfig.setProxyHeaderHostMode(config.getProxyHeaderHostMode());
+        serverConfig.setProxyFixedHeaderHost(config.getProxyFixedHeaderHost());
+        
         serverConfig.getNativeProperties().clear();
         serverConfig.getNativeProperties().putAll(config.getNativeProperties());
+
+        logger.debug("Saving serverConfig:" + serverConfig);
 
         serverConfigDAO.saveAndFlush(serverConfig);
     }
@@ -205,6 +212,7 @@ public class MockedServerEngineServiceImpl implements MockedServerEngineService 
         if (dto == null) {
             throw new ValidationException("config is required");
         }
+        logger.debug("Validating server config: " + dto.toString());
         if (dto.getPort() == null) {
             throw new ValidationException("'port' config value is required");
         }
@@ -222,6 +230,10 @@ public class MockedServerEngineServiceImpl implements MockedServerEngineService 
                         && !dto.getProxyForwardUrl().startsWith(HttpClientService.HTTP_PROTOCOL))) {
             throw new ValidationException("'proxyForwardUrl' config value is invalid");
         }
+        //if (ProxyHeaderHostModeEnum.FIXED.equals(dto.getProxyHeaderHostMode())
+        //        && dto.getProxyFixedHeaderHost() == null) {
+        //    throw new ValidationException("'proxyHeaderHostFixed' config value is missed");
+        //}
 
     }
 
