@@ -353,6 +353,7 @@ public class MockedRestServerEngineUtils {
                     }
                     AWS4Signer.removeHeader(httpClientCallDTO.getHeaders(), HEADER_X_SMOCKIN_AWS_SERVICE);
                     httpClientCallDTO.getHeaders().put(HEADER_X_SMOCKIN_AWS_SERVICE, awsService.toString());
+                    httpClientCallDTO.setPathInfo("/");
                     return AwsServiceFinder.findEndpointForService(awsService);
                 } else if (!downstreamHost.endsWith("amazonaws.com")) {
                     return downstreamHost;
