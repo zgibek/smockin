@@ -30,7 +30,7 @@ public class AwsCredentialsProvider {
         add(profile.getAwsAccessKey(), profile.getAwsSecretKey());
     }
 
-    public void add(String awsAccessKey, String awsSecretKey) {
+    public final void add(String awsAccessKey, String awsSecretKey) {
         logger.debug("Storing new credentials: [" + awsAccessKey + "]: [" + awsSecretKey + "]");
         credentials.put(awsAccessKey, awsSecretKey);
     }
