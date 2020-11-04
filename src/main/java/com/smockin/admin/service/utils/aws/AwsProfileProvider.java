@@ -64,9 +64,9 @@ class IniParser {
         if (line.startsWith("[") && line.endsWith("]")) {
             currentSection = line.substring(1, line.length() - 1).trim();
         } else {
-            Map<String, String> section = values.computeIfAbsent(currentSection, key -> new HashMap<>());
             String[] pair = line.split("=");
             if (pair.length == 2) {
+                Map<String, String> section = values.computeIfAbsent(currentSection, key -> new HashMap<>());
                 section.put(pair[0].trim(), pair[1].trim());
             }
         }
