@@ -2,8 +2,9 @@ package com.smockin.admin.service.utils.aws;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -47,9 +48,10 @@ class IniParser {
     private final Map<String, Map<String, String>> values = new HashMap<>();
     private String currentSection = "default";
 
-    private IniParser(String file) throws IOException {
-        if (new File(file).exists()) {
-            try (BufferedReader lineReader = new BufferedReader(new FileReader(file))) {
+    private IniParser(String fileName) throws IOException {
+        final File file = new File(fileName);
+        if (file.isFile()) {
+            try (BufferedReader lineReader = Files.newBufferedReader(Paths.get(file.toURI()))) {
                 lineReader.lines()
                         .map(String::trim)
                         .filter(line -> !line.startsWith(";"))

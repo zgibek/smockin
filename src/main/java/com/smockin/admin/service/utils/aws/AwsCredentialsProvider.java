@@ -26,7 +26,7 @@ public class AwsCredentialsProvider {
         return defaultProfile;
     }
 
-    public void add(AwsProfile profile) {
+    public final void add(AwsProfile profile) {
         add(profile.getAwsAccessKey(), profile.getAwsSecretKey());
     }
 

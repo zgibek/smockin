@@ -8,9 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Based and inspired by:

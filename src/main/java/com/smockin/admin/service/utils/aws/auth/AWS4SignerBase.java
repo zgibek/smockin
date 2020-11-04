@@ -30,8 +30,8 @@ public abstract class AWS4SignerBase {
     protected static final String TERMINATOR = "aws4_request";
 
     /** format strings for the date/time and date stamps required during signing **/
-    protected static final String ISO8601BasicFormat = "yyyyMMdd'T'HHmmss'Z'";
-    protected static final String DateStringFormat = "yyyyMMdd";
+    private static final String ISO8601BasicFormat = "yyyyMMdd'T'HHmmss'Z'";
+    private static final String DateStringFormat = "yyyyMMdd";
 
     protected URL endpointUrl;
     protected String httpMethod;

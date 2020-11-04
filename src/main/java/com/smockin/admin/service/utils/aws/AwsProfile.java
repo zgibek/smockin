@@ -1,15 +1,5 @@
 package com.smockin.admin.service.utils.aws;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Properties;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 public class AwsProfile {
 
     private final String profile;
