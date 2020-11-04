@@ -1,17 +1,12 @@
 package com.smockin.admin.service.utils.aws.auth;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.security.InvalidKeyException;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.SimpleTimeZone;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -28,15 +23,15 @@ import org.apache.http.HttpHeaders;
 public abstract class AWS4SignerBase {
 
     /** SHA256 hash of an empty request body **/
-    public static final String EMPTY_BODY_SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+    protected static final String EMPTY_BODY_SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 
-    public static final String SCHEME = "AWS4";
-    public static final String ALGORITHM = "HMAC-SHA256";
-    public static final String TERMINATOR = "aws4_request";
+    protected static final String SCHEME = "AWS4";
+    protected static final String ALGORITHM = "HMAC-SHA256";
+    protected static final String TERMINATOR = "aws4_request";
 
     /** format strings for the date/time and date stamps required during signing **/
-    public static final String ISO8601BasicFormat = "yyyyMMdd'T'HHmmss'Z'";
-    public static final String DateStringFormat = "yyyyMMdd";
+    protected static final String ISO8601BasicFormat = "yyyyMMdd'T'HHmmss'Z'";
+    protected static final String DateStringFormat = "yyyyMMdd";
 
     protected URL endpointUrl;
     protected String httpMethod;
@@ -48,17 +43,19 @@ public abstract class AWS4SignerBase {
 
     public static final String HEADER_X_AMZ_CONTENT_SHA_256 = "x-amz-content-sha256";
     public static final String HEADER_X_AMZ_DATE = "x-amz-date";
-    public static final String HEADER_X_AMZ_TARGET = "x-amz-target";
-    public static final String HEADER_X_AMZ_SECURITY_TOKEN = "x-amz-security-token";
 
     /**
      * @see https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
      */
-    protected static final HashSet<String> HEADER_PREFIXES_TO_INCLUDE_IN_AUTH = new HashSet<String>() {{
-        add(HttpHeaders.HOST.toLowerCase());
-        add(HttpHeaders.CONTENT_TYPE.toLowerCase());
-        add("x-amz-");
-    }};
+    protected static final Set<String> HEADER_PREFIXES_TO_INCLUDE_IN_AUTH;
+    static {
+        Set<String> tempSet = new HashSet<>();
+        tempSet.add(HttpHeaders.HOST.toLowerCase());
+        tempSet.add(HttpHeaders.CONTENT_TYPE.toLowerCase());
+        tempSet.add("x-amz-");
+
+        HEADER_PREFIXES_TO_INCLUDE_IN_AUTH = Collections.unmodifiableSet(tempSet);
+    };
 
     /**
      * Create a new AWS V4 signer.
@@ -99,7 +96,9 @@ public abstract class AWS4SignerBase {
         StringBuilder buffer = new StringBuilder();
         for (String header : sortedHeaders) {
             if (shouldSignHeader(header)) {
-                if (buffer.length() > 0) buffer.append(";");
+                if (buffer.length() > 0) {
+                    buffer.append(";");
+                }
                 buffer.append(header.toLowerCase());
             }
         }
@@ -136,8 +135,10 @@ public abstract class AWS4SignerBase {
         StringBuilder buffer = new StringBuilder();
         for (String key : sortedHeaders) {
             if (shouldSignHeader(key)) {
-                buffer.append(key.toLowerCase().replaceAll("\\s+", " ") + ":" + headers.get(key).replaceAll("\\s+", " "));
-                buffer.append("\n");
+                buffer.append(key.toLowerCase().replaceAll("\\s+", " "))
+                        .append(":")
+                        .append(headers.get(key).replaceAll("\\s+", " "))
+                        .append("\n");
             }
         }
 
@@ -246,8 +247,9 @@ public abstract class AWS4SignerBase {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             md.update(text.getBytes("UTF-8"));
             return md.digest();
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to compute hash while signing request: " + e.getMessage(), e);
+        } catch (NoSuchAlgorithmException | UnsupportedEncodingException exception) {
+            throw new RuntimeException("Unable to compute hash while signing request: "
+                    + exception.getMessage(), exception);
         }
     }
 
@@ -259,8 +261,11 @@ public abstract class AWS4SignerBase {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             md.update(data);
             return md.digest();
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to compute hash while signing request: " + e.getMessage(), e);
+        } catch (NoSuchAlgorithmException noSuchAlgorithmException) {
+            throw new RuntimeException("Unable to compute hash while signing request: "
+                    + noSuchAlgorithmException.getMessage(),
+                    noSuchAlgorithmException
+            );
         }
     }
 
@@ -270,8 +275,8 @@ public abstract class AWS4SignerBase {
             Mac mac = Mac.getInstance(algorithm);
             mac.init(new SecretKeySpec(key, algorithm));
             return mac.doFinal(data);
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to calculate a request signature: " + e.getMessage(), e);
+        } catch (NoSuchAlgorithmException | UnsupportedEncodingException | InvalidKeyException exception) {
+            throw new RuntimeException("Unable to calculate a request signature: " + exception.getMessage(), exception);
         }
     }
 }

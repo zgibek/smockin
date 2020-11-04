@@ -12,6 +12,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
@@ -38,8 +39,8 @@ public class HttpUtils {
                 wr.flush();
                 wr.close();
             }
-        } catch (Exception e) {
-            throw new RuntimeException("Request failed. " + e.getMessage(), e);
+        } catch (IOException exception) {
+            throw new RuntimeException("Request failed. " + exception.getMessage(), exception);
         }
         return executeHttpRequest(connection);
     }
@@ -54,17 +55,17 @@ public class HttpUtils {
                 is = connection.getErrorStream();
             }
 
-            BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-            String line;
-            StringBuffer response = new StringBuffer();
-            while ((line = rd.readLine()) != null) {
-                response.append(line);
-                response.append('\r');
+            StringBuilder response = new StringBuilder();
+            try (BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = rd.readLine()) != null) {
+                    response.append(line);
+                    response.append('\r');
+                }
             }
-            rd.close();
             return response.toString();
-        } catch (Exception e) {
-            throw new RuntimeException("Request failed. " + e.getMessage(), e);
+        } catch (IOException exception) {
+            throw new RuntimeException("Request failed. " + exception.getMessage(), exception);
         } finally {
             if (connection != null) {
                 connection.disconnect();
@@ -91,8 +92,8 @@ public class HttpUtils {
             connection.setDoInput(true);
             connection.setDoOutput(true);
             return connection;
-        } catch (Exception e) {
-            throw new RuntimeException("Cannot create connection. " + e.getMessage(), e);
+        } catch (IOException exception) {
+            throw new RuntimeException("Cannot create connection. " + exception.getMessage(), exception);
         }
     }
 

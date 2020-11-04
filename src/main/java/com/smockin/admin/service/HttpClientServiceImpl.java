@@ -249,7 +249,7 @@ public class HttpClientServiceImpl implements HttpClientService {
                 .loadTrustMaterial(null, (x509CertChain, authType) -> true)
                 .build();
 
-        CloseableHttpClient httpclient = HttpClientBuilder.create()
+        return HttpClientBuilder.create()
                 .setSSLContext(sslContext)
                 .setConnectionManager(
                         new PoolingHttpClientConnectionManager(
@@ -262,7 +262,6 @@ public class HttpClientServiceImpl implements HttpClientService {
                 .setRedirectStrategy(new RedirectAllowingRedirectStrategy())
                 .setRedirectStrategy(new LaxRedirectStrategy())
                 .build();
-        return httpclient;
     }
 
     private class RedirectAllowingRedirectStrategy extends DefaultRedirectStrategy {
@@ -305,11 +304,12 @@ public class HttpClientServiceImpl implements HttpClientService {
                 final HttpContext context) throws ProtocolException {
             final URI uri = getLocationURI(request, response, context);
             final String method = request.getRequestLine().getMethod();
-            logger.info("======================================================================");
-            logger.info("Doing redirection for request: " + request.toString());
-            logger.info("Response: " + response.getStatusLine().getStatusCode() + ": " + response.toString());
-            logger.info("Context: " + context);
-            logger.info("======================================================================");
+            String message = "======================================================================"
+                    +"\nDoing redirection for request: " + request.toString()
+                    +"\nResponse: " + response.getStatusLine().getStatusCode() + ": " + response.toString()
+                    +"\nContext: " + context
+                    +"\n======================================================================";
+            logger.info(message);
             if (method.equalsIgnoreCase(HttpHead.METHOD_NAME)) {
                 return new HttpHead(uri);
             } else if (method.equalsIgnoreCase(HttpGet.METHOD_NAME)) {

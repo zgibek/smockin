@@ -230,10 +230,10 @@ public class MockedServerEngineServiceImpl implements MockedServerEngineService 
                         && !dto.getProxyForwardUrl().startsWith(HttpClientService.HTTP_PROTOCOL))) {
             throw new ValidationException("'proxyForwardUrl' config value is invalid");
         }
-        //if (ProxyHeaderHostModeEnum.FIXED.equals(dto.getProxyHeaderHostMode())
-        //        && dto.getProxyFixedHeaderHost() == null) {
-        //    throw new ValidationException("'proxyHeaderHostFixed' config value is missed");
-        //}
+        if (ProxyHeaderHostModeEnum.FIXED.equals(dto.getProxyHeaderHostMode())
+                && (dto.getProxyFixedHeaderHost() == null || dto.getProxyFixedHeaderHost().length()==0)) {
+            throw new ValidationException("'proxyHeaderHostFixed' config value is missed");
+        }
 
     }
 

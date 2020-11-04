@@ -1,7 +1,7 @@
 package com.smockin.admin.persistence.enums;
 
 /**
- * zgibek on 25/10/2020 22:07
+ * Defines options available for configuration the proxy mode.
  */
 public enum ProxyHeaderHostModeEnum {
     /**

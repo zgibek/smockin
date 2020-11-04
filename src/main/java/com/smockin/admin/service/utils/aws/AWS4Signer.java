@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * zgibek on 2020-10-28 23:56
  * Based and inspired by:
  * https://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-examples-using-sdks.html#sig-v4-examples-using-sdk-java
  */
@@ -72,14 +71,7 @@ public class AWS4Signer extends AWS4SignerBase {
      * @param header header to remove.
      */
     public static void removeHeader(final Map<String, String> headers, final String header) {
-
-        Set<String> keysToRemove = new HashSet<>();
-        headers.keySet().forEach(key -> {
-            if (key.equalsIgnoreCase(header)) {
-                keysToRemove.add(key);
-            }
-        });
-        keysToRemove.forEach(key -> headers.remove(key));
+        headers.keySet().removeIf(key -> key.equalsIgnoreCase(header));
     }
 
     public static void updateHeaderWithAuthorization(Map<String, String> headers, String awsAuthorizationHeaderValue) {
