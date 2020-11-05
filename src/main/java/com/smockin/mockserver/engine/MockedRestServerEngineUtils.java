@@ -48,8 +48,13 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class MockedRestServerEngineUtils {
 
-    private static final String HEADER_X_SMOCKIN_AWS_SERVICE = "x-smockin-aws-service";
     private final Logger logger = LoggerFactory.getLogger(MockedRestServerEngineUtils.class);
+
+    private static final String HEADER_X_SMOCKIN_AWS_SERVICE = "x-smockin-aws-service";
+    private static final String AWS_S3_SERVICE = "s3";
+    private static final String AWS_STS_SERVICE = "sts";
+    private static final String ENDPOINT_AMAZONAWS_COM = ".amazonaws.com";
+    private static final String ENDPOINT_US_EAST_1_AMAZONAWS_COM = ".us-east-1.amazonaws.com";
 
     @Autowired
     private RestfulMockDAO restfulMockDAO;
@@ -363,11 +368,11 @@ public class MockedRestServerEngineUtils {
 
     public static String determineEndpointForService(String awsService) {
         switch (awsService) {
-            case "s3":
-            case "sts":
-                return awsService + ".amazonaws.com";
+            case AWS_S3_SERVICE:
+            case AWS_STS_SERVICE:
+                return awsService + ENDPOINT_AMAZONAWS_COM;
             default:
-                return awsService + ".us-east-1.amazonaws.com";
+                return awsService + ENDPOINT_US_EAST_1_AMAZONAWS_COM;
         }
     }
 
