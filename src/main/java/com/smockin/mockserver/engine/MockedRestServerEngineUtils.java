@@ -362,10 +362,13 @@ public class MockedRestServerEngineUtils {
     }
 
     public static String determineEndpointForService(String awsService) {
-        if ("sts".equals(awsService)) {
-            return awsService + ".amazonaws.com";
+        switch (awsService) {
+            case "s3":
+            case "sts":
+                return awsService + ".amazonaws.com";
+            default:
+                return awsService + ".us-east-1.amazonaws.com";
         }
-        return awsService + ".us-east-1.amazonaws.com";
     }
 
     Optional<String> handleClientDownstreamProxyCallResponse(final HttpClientResponseDTO httpClientResponse,
